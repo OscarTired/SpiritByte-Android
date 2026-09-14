@@ -1,0 +1,4 @@
+[bindings.kotlin]
+package_name = "com.spiritbyte.core"
+cdylib_name = "spiritbyte_mobile"
+android = true

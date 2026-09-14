@@ -1,0 +1,23 @@
+.gradle/
+.tools/
+**/build/
+**/target/
+local.properties
+.idea/
+*.iml
+app/src/main/jniLibs/
+app/src/main/java/com/spiritbyte/core/
+*.jks
+*.keystore
+instalador/*.apk
+
+# Local secrets and portable vault exports
+.env
+.env.*
+!.env.example
+*.spiritbyte
+*.pem
+*.p12
+*.pfx
+.externalNativeBuild/
+.cxx/

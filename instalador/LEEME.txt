@@ -1,0 +1,6 @@
+Instala SpiritByte-Android.apk en tu celular.
+La app aparece como SpiritByte y su paquete es com.spiritbyte.android.
+
+No instales app-debug-androidTest.apk: es un paquete auxiliar de pruebas,
+com.spiritbyte.android.test, y no tiene icono ni pantalla de inicio.
+Si ya lo instalaste, puedes desinstalar ese paquete de pruebas desde Ajustes.

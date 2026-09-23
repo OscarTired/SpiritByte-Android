@@ -7,7 +7,7 @@
 
 SpiritByte keeps your credentials in an encrypted vault on your device. Create folders, generate passwords, customize the interface and transfer encrypted backups between Android and desktop. No account or server is required, and the app does not request Internet access.
 
-**Current version:** 0.3.0-dev. **Compatibility:** Android 8.0 or later, ARM64 and x86_64.
+**Current version:** 0.4.0-dev. **Compatibility:** Android 8.0 or later, ARM64 and x86_64.
 
 ## Desktop version
 
@@ -30,7 +30,9 @@ Backup transfer is manual; automatic synchronization is not implemented.
 - Automatic locking when the app enters the background and after two minutes of inactivity.
 - Screenshot protection and exclusion of the vault from Android automatic backups.
 - Bundled Geist Pixel fonts, five color palettes, CRT scanlines and adjustable panel opacity.
-- Solid, gradient or custom image backgrounds, plus the original animated fox intro.
+- Solid, gradient, custom image or animated GIF backgrounds, plus the original animated fox intro.
+- Copy the 12-word recovery phrase, with sensitive clipboard preview handling.
+- Minimum-consumption appearance preset, bounded wallpaper decoding and cached vault filtering.
 
 Deleting a folder preserves its credentials. Folder icons, colors and hierarchy are also retained when importing a backup.
 
@@ -73,11 +75,23 @@ instalador/SpiritByte-Android.apk
 
 Install this APK to run **SpiritByte** (`com.spiritbyte.android`). The `app-debug-androidTest.apk` file is only a test package and has no launcher icon.
 
-The output is a debug-signed development build. Updating an existing installation requires the same signing key; keep your encrypted backup before changing build environments. When using the same key, install over the existing app to preserve its vault.
+The output is a debug-signed development build. Add `-Lightweight` to generate an optimized installer with R8 code/resource shrinking and debugging disabled, using the same development signing key. Updating an existing installation requires the same signing key; keep your encrypted backup before changing build environments. When using the same key, install over the existing app to preserve its vault.
 
 To work in Android Studio, first run `scripts/build-native.ps1`, then open this repository. Generated Kotlin bindings and native libraries are not tracked in Git and should not be edited manually. After generating them, `scripts/build.ps1 -SkipNative` rebuilds the Android interface without rebuilding Rust.
 
 The desktop checkout is not required for a normal Android build. Fonts, icons and artwork are already included. Optional asset-import scripts expect a sibling checkout named `SpireByte-V2`; font conversion additionally requires Python `fonttools` and `brotli`, and icon conversion requires the desktop Node dependencies.
+
+## Low resource usage and GIF backgrounds
+
+Use **Tema → Aplicar consumo mínimo** for a solid background, opaque panels and disabled CRT/glow/intro effects. Choosing solid or gradient releases the decoded wallpaper while retaining the saved file. Static images are decoded to a maximum edge of 1280 px. Animated GIFs use the native Android decoder at up to 960 px and stop when their view is hidden or detached. Android 8 uses a fallback capped at 30 redraws per second and accepts GIF dimensions up to 960 × 960 px. Import accepts files up to 20 MiB.
+
+GIFs remain animated after restarting the app. They use more CPU/battery than a solid background; choose the minimum-consumption preset when battery usage matters most. Physical-device RAM/battery measurements are still pending.
+
+```powershell
+.\scripts\build.ps1 -SkipNative -Lightweight
+# Run the instrumented suite on the development build:
+.\gradlew.bat :app:connectedDebugAndroidTest
+```
 
 ## Backups and recovery
 
@@ -85,7 +99,7 @@ Choose a separate backup password when exporting a `.spiritbyte` file. The vault
 
 To import, choose the file, unlock the vault again if requested, and enter the backup password. Imported records receive new IDs and are added to the destination vault; importing the same backup twice creates duplicates. Visual preferences and wallpapers are not included.
 
-Write down the recovery phrase before leaving its screen. It is shown once during setup. Opening Android's document picker locks the vault; export retains only encrypted backup data while that picker is open.
+Write down or copy the recovery phrase before leaving its screen. It is shown once during setup. Opening Android's document picker locks the vault; export retains only encrypted backup data while that picker is open.
 
 ## Architecture
 

@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Bitmap
+import android.graphics.drawable.Animatable
 import android.net.Uri
 import androidx.core.content.res.ResourcesCompat
 import androidx.lifecycle.ViewModelStore
@@ -66,7 +67,7 @@ class AppearanceAssetsTest {
             main {
                 assertEquals("image", model.settings.background)
                 assertNotNull(model.wallpaper)
-                assertTrue(model.wallpaper!!.width <= 2048)
+                assertTrue(model.wallpaper!!.width <= 1280)
                 model.update(model.settings.copy(font = "grid", palette = "synthwave"))
             }
             val invalid = directory.resolve("invalid.png").apply { writeText("not an image") }
@@ -78,6 +79,75 @@ class AppearanceAssetsTest {
             main { assertEquals("grid", model.settings.font); assertEquals("synthwave", model.settings.palette); model.removeWallpaper() }
             await { !model.busy }
             main { assertEquals("solid", model.settings.background); assertNull(model.wallpaper) }
+        } finally {
+            main { store.clear() }
+            context.deleteSharedPreferences("${directory.name}-appearance")
+            directory.deleteRecursively()
+        }
+    }
+
+    @Test fun gifKeepsAnimationAcrossReloadAndReleasesInactiveBackground() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        val directory = context.cacheDir.resolve("gif-test-${UUID.randomUUID()}").apply { mkdirs() }
+        val app = IsolatedApp(context, directory)
+        // Two 1x1 frames (red, green), 100 ms each, looping forever.
+        val encoded = ("47494638396101000100800000ff000000ff00" +
+            "21ff0b4e45545343415045322e300301000000" +
+            "21f904000a0000002c0000000001000100000202440100" +
+            "21f904000a0000002c00000000010001000002024c01003b")
+            .chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+        val source = directory.resolve("source.gif").apply { writeBytes(encoded) }
+        val store = ViewModelStore()
+        lateinit var model: AppearanceModel
+        fun main(action: () -> Unit) = instrumentation.runOnMainSync(action)
+        fun await(predicate: () -> Boolean) {
+            repeat(400) {
+                var ready = false
+                main { ready = predicate() }
+                if (ready) return
+                Thread.sleep(25)
+            }
+            fail("GIF operation timed out")
+        }
+        try {
+            main { model = AppearanceModel(app); store.put("initial", model); model.chooseWallpaper(Uri.fromFile(source)) }
+            await { !model.busy }
+            main {
+                assertTrue(model.hasWallpaper)
+                assertTrue(model.animatedWallpaper is Animatable)
+                assertNull(model.wallpaper)
+                val animation = model.animatedWallpaper as Animatable
+                val view = WallpaperImageView(context)
+                view.setImageDrawable(model.animatedWallpaper)
+                animation.start()
+                assertTrue(animation.isRunning)
+                view.onVisibilityAggregated(false)
+                assertFalse(animation.isRunning)
+                animation.start()
+                view.setImageDrawable(null)
+                assertFalse(animation.isRunning)
+            }
+            assertArrayEquals(encoded, directory.resolve("appearance/wallpaper.png").readBytes())
+            main { model = AppearanceModel(app); store.put("reopened", model) }
+            await { model.animatedWallpaper != null }
+            main {
+                assertTrue(model.animatedWallpaper is Animatable)
+                model.update(model.settings.copy(background = "solid"))
+                assertNull(model.wallpaper)
+                assertNull(model.animatedWallpaper)
+                assertTrue(model.hasWallpaper)
+                model.update(model.settings.copy(background = "image"))
+            }
+            await { model.animatedWallpaper != null }
+            val invalid = directory.resolve("broken.gif").apply { writeText("GIF89a broken") }
+            main { model.chooseWallpaper(Uri.fromFile(invalid)) }
+            await { !model.busy }
+            main { assertNotNull(model.message); assertTrue(model.animatedWallpaper is Animatable) }
+            assertArrayEquals(encoded, directory.resolve("appearance/wallpaper.png").readBytes())
+            main { model.removeWallpaper() }
+            await { !model.busy }
+            main { assertFalse(model.hasWallpaper); assertNull(model.animatedWallpaper) }
         } finally {
             main { store.clear() }
             context.deleteSharedPreferences("${directory.name}-appearance")

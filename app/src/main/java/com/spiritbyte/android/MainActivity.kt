@@ -3,6 +3,9 @@ package com.spiritbyte.android
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.os.PersistableBundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -22,6 +25,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -135,10 +139,22 @@ private fun UnlockScreen(model: VaultModel) {
 @Composable
 private fun RecoveryScreen(model: VaultModel) {
     var acknowledged by remember { mutableStateOf(false) }
+    var copied by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(18.dp)) {
         Text("Guarda tu recuperación", style = MaterialTheme.typography.headlineMedium)
         Text("Estas 12 palabras permiten recuperar toda tu bóveda. Anótalas en un lugar privado antes de continuar. Se muestran una sola vez; no cambies de aplicación todavía.")
         Card { Text(model.recovery.orEmpty(), Modifier.padding(24.dp), style = MaterialTheme.typography.titleLarge) }
+        OutlinedButton(onClick = {
+            model.recovery?.let { phrase ->
+                val clip = ClipData.newPlainText("Recuperación de SpiritByte", phrase)
+                clip.description.extras = PersistableBundle().apply {
+                    putBoolean("android.content.extra.IS_SENSITIVE", true)
+                }
+                context.getSystemService(ClipboardManager::class.java).setPrimaryClip(clip)
+                copied = true
+            }
+        }) { Text(if (copied) "12 palabras copiadas" else "Copiar las 12 palabras") }
         Row { Checkbox(acknowledged, { acknowledged = it }); Text("He guardado las 12 palabras.", Modifier.padding(top = 12.dp)) }
         Button(onClick = model::confirmRecovery, enabled = acknowledged) { Text("Entrar a mi bóveda") }
     }
@@ -176,10 +192,13 @@ private fun VaultScreen(model: VaultModel, export: (String) -> Unit, selectImpor
         TextButton(onClick = { editing = Entry(folderId = folderFilter?.takeIf { it.isNotEmpty() }) }) { Text("+ Nueva") }
     }
     TextButton(onClick = { folderManager = true }) { Text("Administrar carpetas e iconos") }
-    val entries = model.data.entries.filter {
+    val sortedEntries = remember(model.data.entries) { model.data.entries.sortedBy { it.title.lowercase() } }
+    val foldersById = remember(model.data.folders) { model.data.folders.associateBy { it.id } }
+    val entries = remember(sortedEntries, favorites, folderFilter, query) { sortedEntries.filter {
         (!favorites || it.favorite) && (folderFilter == null || (folderFilter == "" && it.folderId == null) || it.folderId == folderFilter) &&
-            listOf(it.title, it.username, it.url).any { field -> field.contains(query, ignoreCase = true) }
-    }.sortedBy { it.title.lowercase() }
+            (query.isEmpty() || it.title.contains(query, ignoreCase = true) ||
+                it.username.contains(query, ignoreCase = true) || it.url.contains(query, ignoreCase = true))
+    } }
     LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         if (entries.isEmpty()) item {
             Text(if (model.data.entries.isEmpty()) "Tu bóveda está lista. Añade tu primera credencial o importa un backup de escritorio." else "No hay coincidencias.", Modifier.padding(vertical = 30.dp))
@@ -189,10 +208,10 @@ private fun VaultScreen(model: VaultModel, export: (String) -> Unit, selectImpor
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text((if (entry.favorite) "★ " else "") + entry.title, style = MaterialTheme.typography.titleMedium)
                     Text(entry.username.ifBlank { entry.url.ifBlank { "Sin usuario" } }, color = MaterialTheme.colorScheme.secondary)
-                    model.data.folders.find { it.id == entry.folderId }?.let { folder ->
+                    foldersById[entry.folderId]?.let { folder ->
                         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                             FolderSymbol(folder, Modifier.size(16.dp)); Spacer(Modifier.width(6.dp))
-                            Text(folderTrail(model.data.folders, folder.id), style = MaterialTheme.typography.labelSmall)
+                            Text(remember(model.data.folders, folder.id) { folderTrail(model.data.folders, folder.id) }, style = MaterialTheme.typography.labelSmall)
                         }
                     }
                 }

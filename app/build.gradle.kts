@@ -11,8 +11,8 @@ android {
         applicationId = "com.spiritbyte.android"
         minSdk = 26
         targetSdk = 34
-        versionCode = 3
-        versionName = "0.3.0-dev"
+        versionCode = 4
+        versionName = "0.4.0-dev"
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -23,7 +23,19 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
-    buildTypes { release { isMinifyEnabled = false } }
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+        // Optimized local installer, retaining the existing development signing key.
+        create("lightweight") {
+            initWith(getByName("release"))
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += "release"
+        }
+    }
 }
 
 dependencies {

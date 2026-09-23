@@ -18,6 +18,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 
 data class DesktopPalette(val id: String, val name: String, val bg: Color, val surface: Color,
     val border: Color, val text: Color, val dim: Color, val primary: Color, val accent: Color)
@@ -35,25 +36,29 @@ val LocalDesktopPalette = staticCompositionLocalOf { desktopPalettes.first() }
 @Composable
 fun SpiritTheme(settings: Appearance, content: @Composable () -> Unit) {
     val palette = desktopPalettes.find { it.id == settings.palette } ?: desktopPalettes.first()
-    val family = when (settings.font) {
-        "grid" -> FontFamily(Font(R.font.geist_pixel_grid))
-        "circle" -> FontFamily(Font(R.font.geist_pixel_circle))
-        "triangle" -> FontFamily(Font(R.font.geist_pixel_triangle))
-        "line" -> FontFamily(Font(R.font.geist_pixel_line))
-        "system" -> FontFamily.Monospace
-        else -> FontFamily(Font(R.font.geist_pixel_square))
+    val family = remember(settings.font) {
+        when (settings.font) {
+            "grid" -> FontFamily(Font(R.font.geist_pixel_grid))
+            "circle" -> FontFamily(Font(R.font.geist_pixel_circle))
+            "triangle" -> FontFamily(Font(R.font.geist_pixel_triangle))
+            "line" -> FontFamily(Font(R.font.geist_pixel_line))
+            "system" -> FontFamily.Monospace
+            else -> FontFamily(Font(R.font.geist_pixel_square))
+        }
     }
-    val type = Typography()
-    val typography = Typography(
-        displayLarge = type.displayLarge.copy(fontFamily = family), displayMedium = type.displayMedium.copy(fontFamily = family),
-        displaySmall = type.displaySmall.copy(fontFamily = family), headlineLarge = type.headlineLarge.copy(fontFamily = family),
-        headlineMedium = type.headlineMedium.copy(fontFamily = family), headlineSmall = type.headlineSmall.copy(fontFamily = family),
-        titleLarge = type.titleLarge.copy(fontFamily = family), titleMedium = type.titleMedium.copy(fontFamily = family),
-        titleSmall = type.titleSmall.copy(fontFamily = family), bodyLarge = type.bodyLarge.copy(fontFamily = family),
-        bodyMedium = type.bodyMedium.copy(fontFamily = family), bodySmall = type.bodySmall.copy(fontFamily = family),
-        labelLarge = type.labelLarge.copy(fontFamily = family), labelMedium = type.labelMedium.copy(fontFamily = family),
-        labelSmall = type.labelSmall.copy(fontFamily = family)
-    )
+    val typography = remember(family) {
+        val type = Typography()
+        Typography(
+            displayLarge = type.displayLarge.copy(fontFamily = family), displayMedium = type.displayMedium.copy(fontFamily = family),
+            displaySmall = type.displaySmall.copy(fontFamily = family), headlineLarge = type.headlineLarge.copy(fontFamily = family),
+            headlineMedium = type.headlineMedium.copy(fontFamily = family), headlineSmall = type.headlineSmall.copy(fontFamily = family),
+            titleLarge = type.titleLarge.copy(fontFamily = family), titleMedium = type.titleMedium.copy(fontFamily = family),
+            titleSmall = type.titleSmall.copy(fontFamily = family), bodyLarge = type.bodyLarge.copy(fontFamily = family),
+            bodyMedium = type.bodyMedium.copy(fontFamily = family), bodySmall = type.bodySmall.copy(fontFamily = family),
+            labelLarge = type.labelLarge.copy(fontFamily = family), labelMedium = type.labelMedium.copy(fontFamily = family),
+            labelSmall = type.labelSmall.copy(fontFamily = family)
+        )
+    }
     CompositionLocalProvider(LocalAppearance provides settings, LocalDesktopPalette provides palette) {
         MaterialTheme(
             colorScheme = darkColorScheme(primary = palette.primary, onPrimary = palette.bg,
@@ -83,6 +88,11 @@ fun DesktopBackground(model: AppearanceModel, content: @Composable BoxScope.() -
             Image(it.asImageBitmap(), contentDescription = null, modifier = Modifier.matchParentSize(), contentScale = ContentScale.Crop)
             Box(Modifier.matchParentSize().background(palette.bg.copy(alpha = .30f)))
         }
+        if (settings.background == "image") model.animatedWallpaper?.let { drawable ->
+            AndroidView(factory = { WallpaperImageView(it) }, modifier = Modifier.matchParentSize(),
+                onRelease = { it.setImageDrawable(null) }, update = { it.setImageDrawable(drawable) })
+            Box(Modifier.matchParentSize().background(palette.bg.copy(alpha = .30f)))
+        }
         content()
         if (settings.scanlines) Canvas(Modifier.matchParentSize()) {
             var y = 0f
@@ -101,6 +111,9 @@ fun AppearanceScreen(model: AppearanceModel, chooseImage: () -> Unit, close: () 
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("Apariencia", style = MaterialTheme.typography.headlineMedium)
         Text("El mismo espíritu. Otra pantalla.", color = MaterialTheme.colorScheme.secondary)
+        OutlinedButton(onClick = { model.update(settings.copy(background = "solid", panelOpacity = 1f,
+            scanlines = false, glow = false, showIntro = false)) }, enabled = !model.busy) { Text("Aplicar consumo mínimo") }
+        Text("Fondo sólido, paneles opacos y efectos desactivados.", style = MaterialTheme.typography.bodySmall)
         Text("01 / PALETA", style = MaterialTheme.typography.labelLarge)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             desktopPalettes.forEach { palette ->
@@ -120,15 +133,15 @@ fun AppearanceScreen(model: AppearanceModel, chooseImage: () -> Unit, close: () 
         HorizontalDivider()
         Text("03 / FONDO", style = MaterialTheme.typography.labelLarge)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("solid" to "Sólido", "gradient" to "Degradado", "image" to "Imagen").forEach { (id, label) ->
+            listOf("solid" to "Sólido", "gradient" to "Degradado", "image" to "Imagen / GIF").forEach { (id, label) ->
                 FilterChip(settings.background == id, onClick = {
-                    if (id == "image" && model.wallpaper == null) chooseImage()
+                    if (id == "image" && !model.hasWallpaper) chooseImage()
                     else model.update(settings.copy(background = id))
                 }, label = { Text(label) }, enabled = !model.busy)
             }
         }
-        OutlinedButton(onClick = chooseImage, enabled = !model.busy) { Text("Elegir imagen del dispositivo") }
-        if (model.wallpaper != null) TextButton(onClick = model::removeWallpaper, enabled = !model.busy) { Text("Eliminar imagen guardada") }
+        OutlinedButton(onClick = chooseImage, enabled = !model.busy) { Text("Elegir imagen o GIF del dispositivo") }
+        if (model.hasWallpaper) TextButton(onClick = model::removeWallpaper, enabled = !model.busy) { Text("Eliminar imagen guardada") }
         if (model.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
         model.message?.let { Text(it, color = MaterialTheme.colorScheme.secondary) }
         Text("Opacidad de los paneles · ${(settings.panelOpacity * 100).toInt()}%")

@@ -1,3 +1,15 @@
+## 2026-09-19 — Optimización, copia de recuperación y GIF
+
+- Variante `lightweight`: R8 y reducción de recursos, sin depuración, con la misma firma de desarrollo. No se cambian el cifrado ni el formato de la bóveda.
+- APK anterior: 12.370.039 bytes. APK optimizado: aproximadamente 4,33 MB (65 % menos); incluye ARM64 y x86_64.
+- Firma SHA-256 comprobada: coincide con el instalador anterior.
+- `assembleDebug`, `lintDebug`, `assembleLightweight` y `lintLightweight`: correctos; lint final de lightweight con 0 errores y 10 avisos (6 sobre versiones de dependencias y 4 sobre recursos/estilo).
+- `connectedDebugAndroidTest`: 6 pruebas aprobadas en Pixel 8 Pro / API 35. Incluyen puente nativo, bóveda, backups, bloqueo, carpetas, fuentes, límite de imágenes y persistencia de GIF.
+- La prueba nueva importa un GIF de dos fotogramas, verifica que conserva sus bytes y animación al recargar, libera el fondo inactivo, detiene la animación al ocultar/desconectar la vista y conserva el fondo anterior ante un archivo inválido.
+- APK optimizado instalado sobre la app existente y arranque en frío confirmado (`am start -W`: `Status: ok`).
+- La instrumentación directa de la variante reducida no quedó validada: AndroidX Test falla al enlazar un método Kotlin transformado por R8. La suite soportada sigue usando `debug`; el arranque se comprobó por separado con el APK optimizado.
+- Pendiente: medición comparativa de RAM/batería en teléfono físico y ejecución del fallback de GIF en Android 8.
+
 # Validación de SpiritByte Android
 
 Fecha: 12 de septiembre de 2026.

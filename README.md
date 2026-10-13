@@ -110,7 +110,9 @@ native/    UniFFI bridge, serialized sessions and transactional mutations
 scripts/   Windows build tools and optional desktop asset conversion
 ```
 
-The Rust core was extracted from SpiritByte Desktop while preserving its data formats. This repository contains the engine needed to build Android independently. The current desktop source uses a sibling path dependency on `SpiritByte-Android/core`.
+The Rust core is the standalone `spiritbyte-core` library in this repository's `core/` directory. Android's native bridge uses this local copy. Desktop includes its own copy of the same library, so each application can build independently without downloading the other repository.
+
+When changing the engine, apply the same source and dependency changes to both repositories' `core/` directories and run the core tests in both to preserve vault and backup compatibility. Copies do not synchronize automatically. See [the core library README](core/README.md).
 
 ## Security and development status
 

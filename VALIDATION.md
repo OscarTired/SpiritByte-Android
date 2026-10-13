@@ -1,3 +1,13 @@
+## 2026-10-13 — Enlaces del desarrollador y Android 16
+
+- Añadidos accesos mediante iconos a PayPal, GitHub de OscarTired y el portafolio de Octa_Dev. Usan el navegador externo; no se añade permiso de Internet.
+- Los controles tienen áreas táctiles de 48 dp y descripciones accesibles. Permanecen deshabilitados durante operaciones y mientras se muestra la frase de recuperación sin confirmar.
+- `assembleDebug`, `lintDebug` y `assembleDebugAndroidTest`: aprobados. Lint: 0 errores y 4 advertencias.
+- Suite instrumentada existente: 6 pruebas aprobadas en `Pixel_8_Pro_API_36`, Android 16/API 36, x86_64 y páginas de memoria de 16 KB. Cubren bóveda, recuperación y respaldos, sesión, carpetas y recursos/apariencia. Esta ejecución no valida la variante ARM64 en un teléfono físico.
+- Los tres iconos se pulsaron en el emulador y se verificaron los intents del navegador con las URLs esperadas. Al regresar, la interfaz volvió a solicitar el desbloqueo de la bóveda. No se realizaron pagos ni se cambiaron datos de la bóveda existente.
+- `scripts/dev.ps1 -Device emulator-5554`: compilación incremental, instalación y arranque correctos. El comando utiliza la firma debug existente, conserva los datos y no exporta el instalador de distribución. La opción `-Watch` automatiza este ciclo para cambios Kotlin/recursos; no se validó una sesión prolongada de vigilancia.
+- Android Studio Live Edit requiere habilitarlo y ejecutar la variante debug desde el IDE. La activación de Live Edit no se ha verificado en esta sesión.
+
 ## 2026-09-19 — Optimización, copia de recuperación y GIF
 
 - Variante `lightweight`: R8 y reducción de recursos, sin depuración, con la misma firma de desarrollo. No se cambian el cifrado ni el formato de la bóveda.

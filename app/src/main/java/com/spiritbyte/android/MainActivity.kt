@@ -84,6 +84,7 @@ private fun SpiritByte(model: VaultModel, appearance: AppearanceModel) {
                 }
                 TextButton(onClick = { appearance.screenOpen = !appearance.screenOpen }) { Text("Tema") }
             }
+            DeveloperLinks(Modifier.padding(top = 8.dp), enabled = !model.busy && model.recovery == null)
             if (model.unlocked && !appearance.screenOpen) TextButton(onClick = model::lock) { Text("[ Bloquear bóveda ]") }
             HorizontalDivider(Modifier.padding(vertical = 12.dp))
             if (model.busy) LinearProgressIndicator(Modifier.fillMaxWidth())

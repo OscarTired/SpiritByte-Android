@@ -7,7 +7,7 @@
 
 SpiritByte keeps your credentials in an encrypted vault on your device. Create folders, generate passwords, customize the interface and transfer encrypted backups between Android and desktop. No account or server is required, and the app does not request Internet access.
 
-**Current version:** 0.4.0-dev. **Compatibility:** Android 8.0 or later, ARM64 and x86_64.
+**Current version:** 0.4.0. **Compatibility:** Android 8.0 or later, ARM64 and x86_64.
 
 ## Desktop version
 
@@ -49,8 +49,8 @@ Deleting a folder preserves its credentials. Folder icons, colors and hierarchy 
 
 - JDK 17 or a compatible Android Studio JDK, with `JAVA_HOME` configured.
 - Rust with the MSVC toolchain and Visual Studio C++ build tools.
-- Android SDK Platform 34, Build Tools 34.0.0 and NDK 28.2.13676358.
-- Git. Gradle 8.7 is provided through the wrapper.
+- Android SDK Platform 36, Build Tools 35.0.0 and NDK 28.2.13676358.
+- Git. Gradle 8.11.1 is provided through the wrapper.
 
 ```powershell
 git clone https://github.com/OscarTired/SpiritByte-Android.git
@@ -63,7 +63,7 @@ Set `ANDROID_SDK_ROOT` to your SDK directory and create an untracked `local.prop
 
 ```powershell
 $env:ANDROID_SDK_ROOT = 'C:\Android\Sdk'
-'sdk.dir=C:/Android/Sdk' | Set-Content local.properties
+'sdk.dir=C\:/Android/Sdk' | Set-Content local.properties
 .\scripts\build.ps1
 ```
 

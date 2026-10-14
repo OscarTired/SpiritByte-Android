@@ -10,6 +10,8 @@ app/src/main/java/com/spiritbyte/core/
 *.jks
 *.keystore
 instalador/*.apk
+instalador/*.aab
+.signing/
 
 # Local secrets and portable vault exports
 .env

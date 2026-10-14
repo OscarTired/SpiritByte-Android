@@ -1,3 +1,16 @@
+## 2026-10-13 — Preparación de 0.4.0 para Google Play
+
+- `versionCode` 5, `versionName` 0.4.0 y compile/target SDK 36. AGP 8.10.1, Gradle 8.11.1 con checksum del distribuidor y NDK 28.2.13676358.
+- AAB release reducido con R8 y firmado con una clave de subida propia. `scripts/build-release.ps1 -SkipNative`: correcto. El instalador APK de desarrollo conserva su firma anterior.
+- `lintRelease`: 0 errores y 17 advertencias; se corrigió el escape del separador de unidad en `local.properties` y en el ejemplo del README.
+- Bundletool 1.18.3 validó el AAB y confirmó targetSdk 36 y `PAGE_ALIGNMENT_16K`. Los segmentos ELF LOAD de las cuatro bibliotecas ARM64/x86_64 tienen alineación de 16 KB. El APK universal generado desde el AAB pasó `zipalign -c -P 16`.
+- `jarsigner -verify`: firma válida. El certificado autofirmado de subida no requiere una autoridad de certificación pública.
+- Suite instrumentada debug: seis pruebas aprobadas en el emulador Android 16 con páginas de 16 KB, usando el nuevo targetSdk 36.
+- El código release extraído del AAB se firmó con la clave de desarrollo exclusivamente para comprobar su arranque en el emulador sin borrar datos: inicio en frío correcto, pantalla de desbloqueo visible y sin errores nativos ni excepciones fatales en los registros del proceso. Después se restauró la variante debug. No se ejecutó la suite instrumentada contra el código reducido por R8.
+- Acceso a Privacidad disponible antes de desbloquear la bóveda; intent externo comprobado con la política publicada. Captura revisada con Android 16 y la paleta Synthwave, sin recortes de cabecera por las barras del sistema.
+- Los archivos locales de firma y los AAB de distribución están excluidos de Git. No contienen datos de la bóveda del usuario.
+- Pendientes: pruebas en teléfono físico ARM64, instalación desde un canal de Google Play, formularios y revisión de publicación.
+
 ## 2026-10-13 — Enlaces del desarrollador y Android 16
 
 - Añadidos accesos mediante iconos a PayPal, GitHub de OscarTired y el portafolio de Octa_Dev. Usan el navegador externo; no se añade permiso de Internet.

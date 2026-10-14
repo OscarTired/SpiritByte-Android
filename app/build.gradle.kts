@@ -1,18 +1,26 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
+val uploadSigningFile = rootProject.file(".signing/signing.properties")
+val uploadSigning = Properties().apply {
+    if (uploadSigningFile.isFile) uploadSigningFile.inputStream().use { load(it) }
+}
+
 android {
     namespace = "com.spiritbyte.android"
-    compileSdk = 34
+    compileSdk = 36
+    ndkVersion = "28.2.13676358"
     defaultConfig {
         applicationId = "com.spiritbyte.android"
         minSdk = 26
-        targetSdk = 34
-        versionCode = 4
-        versionName = "0.4.0-dev"
+        targetSdk = 36
+        versionCode = 5
+        versionName = "0.4.0"
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -23,8 +31,20 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
+    signingConfigs {
+        if (uploadSigningFile.isFile) {
+            create("upload") {
+                storeFile = uploadSigningFile.parentFile.resolve(uploadSigning.getProperty("storeFile"))
+                storePassword = uploadSigning.getProperty("storePassword")
+                keyAlias = uploadSigning.getProperty("keyAlias")
+                keyPassword = uploadSigning.getProperty("keyPassword")
+                storeType = "PKCS12"
+            }
+        }
+    }
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("upload")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
